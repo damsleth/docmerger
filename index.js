@@ -8,7 +8,7 @@ app.use('/pdfproxy', function (req, res) {
     var url = req.url.replace('/?url=', '');
     req.pipe(request(url)).pipe(res);
 });
-app.listen(process.env.PORT || 3000);
+app.listen(process.env.PORT || 7000);
 
 function fetchPdf(url) {
     fetch(url).then(res => {
