@@ -1,4 +1,5 @@
 var fetch = require("node-fetch")
+var fs = require("fs")
 var express = require("express")
 var request = require("request")
 var PDFMerge = require("pdf-merge")
@@ -21,17 +22,53 @@ app.use(express.urlencoded({ extended: true }));
 // Main endpoint that returns a merged PDF
 // SHOULD BE A POST
 app.use('/getpdf', (req, res) => {
-    let postData = (Object.keys(req.body).length > 0) ? req.body : req.query;
-    if (!Object.keys(postData).length) { returnHTMLBlob(res, `Error: no POST data was sent`) } else {
-        console.log(postData)
+    let d = (Object.keys(req.body).length > 0) ? req.body : req.query;
+    if (!Object.keys(d).length) { returnHTMLBlob(res, `Error: no POST data was sent`) } else {
+        console.log(d)
+        let FullPdfUrls = d.FullPdfUrls
+        let WopiItemIds = d.WopiItemIds
+        let OWAServerUrl = d.OWAServerUrl
+        let WopiAccessToken = d.WopiAccessToken
+
+        // For dev-testing
+        if (FullPdfUrls) {
+            let urls = []
+            FullPdfUrls.length === 1 ? urls.push(FullPdfUrls) : urls = FullPdfUrls
+            // GET FILES, PUT IN TMPDIR / TMP
+            urls.map(url => {
+                savePDFToDisk(url).then(() => {
+                    console.log(`${url}
+                    Saved to disk`);
+                })
+            })
+
+            // PDFMerge(FullPdfUrls).then(buffer => {
+            //     res.writeHead(200, {
+            //         'Content-Type': 'application/pdf',
+            //         'Content-Disposition': 'filename=output.pdf',
+            //         'Content-Length': buffer.length
+            //     });
+            //     res.end(buffer);
+            // }).catch((err) => returnHTMLBlob(res, `<h2>File not found</h2><b>stacktrace:</b><br>${err}`))
+        } else {
+
+        }
 
 
         // req.pipe(request(url)).pipe(res);
 
         // GET THAT PDF
-        res.send(postData)
+        res.send(d)
     }
 });
+
+function savePDFToDisk(url) {
+    return fetch(url).then(res => {
+        res.arrayBuffer().then(data => {
+            fs.appendFileSync("test.pdf", new Buffer(data))
+        })
+    })
+}
 
 // app.use('/getpdf', (req, res) => {
 // var url = req.url.replace('/?url=', '')
@@ -53,19 +90,20 @@ app.use('/getlocalpdf', (req, res) => {
     }).catch((err) => returnHTMLBlob(res, `<h2>File not found</h2><b>stacktrace:</b><br>${err}`))
 });
 
-function fetchPdf(url) {
-    fetch(url).then(res => {
-        res.arrayBuffer().then(data => {
-            pdfData = new Buffer(data)
-            res.writeHead(200, {
-                'Content-Type': 'application/pdf',
-                'Content-Disposition': 'attachment; filename=some_file.pdf',
-                'Content-Length': data.length
-            });
-            res.send(pdfData);
-        })
-    })
-}
+// function fetchPdf(url) {
+//     fetch(url).then(res => {
+//         res.arrayBuffer().then(data => {
+//             fs.appendFileSync("test.pdf", new Buffer(data))
+//             pdfData = new Buffer(data)
+//             res.writeHead(200, {
+//                 'Content-Type': 'application/pdf',
+//                 'Content-Disposition': 'attachment; filename=some_file.pdf',
+//                 'Content-Length': data.length
+//             });
+//             res.send(pdfData);
+//         })
+//     })
+// }
 
 // Returns an html blob to the client, used for error messages and such
 function returnHTMLBlob(res, htmlBlob) {
