@@ -10,8 +10,11 @@ Pass a url to a pdf to the server, and it will return the PDF to the user, bypas
     * express
     * node-fetch
     * nodemon (for dev-purposes)
+* PDFtk - for merging PDFs.
 
 ## Installation
+* Win: Download and install PDFtk from https://www.pdflabs.com/tools/pdftk-the-pdf-toolkit/
+* MacOS: brew install https://raw.githubusercontent.com/turforlag/homebrew-cervezas/master/pdftk.rb
 * npm install
 * node index.js
 
