@@ -8,72 +8,46 @@ app.listen(process.env.PORT || 7000);
 app.use(express.json());       // to support JSON-encoded bodies
 app.use(express.urlencoded({ extended: true }));
 // TODO: limit proxy requests to current top-level-domain only, to avoid proxy exploitation
-// TODO: Accept an array of document IDs, either in url (GET) or post-data (POST)
+// TODO: UI Stuff
 
-// HOW TO CALL THE ENDPOINT FROM CONSOLE 
-// fetch(`http://192.168.24.206:7000/getpdf`,
-// {
-// method:"POST",
-// headers:{"content-type":"application/json",
-// body:{"url":"lol"}
-// }})
-// .then(res=>res.text().then(d=>console.log(d)))
-
-// Main endpoint that returns a merged PDF
-// SHOULD BE A POST
-app.use('/getpdf', (req, res) => {
-    let d = (Object.keys(req.body).length > 0) ? req.body : req.query;
-    if (!Object.keys(d).length) { returnHTMLBlob(res, `Error: no POST data was sent`) } else {
-        console.log(d)
-        let FullPdfUrls = d.FullPdfUrls
-        let WopiItemIds = d.WopiItemIds
-        let OWAServerUrl = d.OWAServerUrl
-        let WopiAccessToken = d.WopiAccessToken
-
-        // For dev-testing
-        if (FullPdfUrls) {
-            let urls = []
-            FullPdfUrls.length === 1 ? urls.push(FullPdfUrls) : urls = FullPdfUrls
-            // GET FILES, PUT IN TMPDIR / TMP
-            urls.map(url => {
-                savePDFToDisk(url).then(() => {
-                    console.log(`${url}
-                    Saved to disk`);
-                })
-            })
-
-            // PDFMerge(FullPdfUrls).then(buffer => {
-            //     res.writeHead(200, {
-            //         'Content-Type': 'application/pdf',
-            //         'Content-Disposition': 'filename=output.pdf',
-            //         'Content-Length': buffer.length
-            //     });
-            //     res.end(buffer);
-            // }).catch((err) => returnHTMLBlob(res, `<h2>File not found</h2><b>stacktrace:</b><br>${err}`))
-        } else {
-
-        }
-
-
-        // req.pipe(request(url)).pipe(res);
-
-        // GET THAT PDF
-        res.send(d)
-    }
-});
-
-function savePDFToDisk(url) {
-    return fetch(url).then(res => {
-        res.arrayBuffer().then(data => {
-            fs.appendFileSync("test.pdf", new Buffer(data))
+async function writeFile(path, data, opts = 'utf8') {
+    new Promise((res, rej) => {
+        fs.writeFile(path, data, opts, (err) => {
+            if (err) rej(err)
+            else res()
         })
     })
 }
 
-// app.use('/getpdf', (req, res) => {
-// var url = req.url.replace('/?url=', '')
-// req.pipe(request(url)).pipe(res);
-// });
+const SAVE_FOLDER = process.env.TEMP ? process.env.TEMP : process.env.TMPDIR
+// Main endpoint that returns a merged PDF
+app.use('/getpdf', (req, res) => {
+    let d = (Object.keys(req.body).length > 0) ? req.body : req.query;
+    if (!Object.keys(d).length) { returnHTMLBlob(res, `Error: no POST data was sent`) } else {
+        mergePDFs(d.documents).then((buffer) => {
+            res.writeHead(200, {
+                'Content-Type': 'application/pdf',
+                'Content-Disposition': 'filename=merged.pdf',
+                'Content-Length': buffer.length
+            });
+            res.end(buffer);
+        })
+    }
+});
+
+async function mergePDFs(documents) {
+    console.log("merging documents, please stand by")
+    let pdfPathArr = [];
+    for (let i in documents) {
+        let doc = documents[i]
+        let pdf = await fetch(doc.pdfUrl)
+        let data = await pdf.arrayBuffer()
+        await writeFile(`${SAVE_FOLDER}${doc.title}.pdf`, new Buffer(data))
+        console.log("saved " + doc.title + " to disk")
+        pdfPathArr.push(`${SAVE_FOLDER}${doc.title}.pdf`)
+    }
+    return await PDFMerge(pdfPathArr)
+}
 
 // Fetches pdfs from the local (server) filesystem.
 // used for dev, not production
@@ -90,20 +64,6 @@ app.use('/getlocalpdf', (req, res) => {
     }).catch((err) => returnHTMLBlob(res, `<h2>File not found</h2><b>stacktrace:</b><br>${err}`))
 });
 
-// function fetchPdf(url) {
-//     fetch(url).then(res => {
-//         res.arrayBuffer().then(data => {
-//             fs.appendFileSync("test.pdf", new Buffer(data))
-//             pdfData = new Buffer(data)
-//             res.writeHead(200, {
-//                 'Content-Type': 'application/pdf',
-//                 'Content-Disposition': 'attachment; filename=some_file.pdf',
-//                 'Content-Length': data.length
-//             });
-//             res.send(pdfData);
-//         })
-//     })
-// }
 
 // Returns an html blob to the client, used for error messages and such
 function returnHTMLBlob(res, htmlBlob) {
