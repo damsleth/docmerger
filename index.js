@@ -72,22 +72,6 @@ async function MergePDFs(documents) {
     return pdfBuffer
 }
 
-// Fetches pdfs from the local (server) filesystem.
-// used for dev, not production
-app.use('/getlocalpdf', (req, res) => {
-    var files = req.url.replace('/?files=', '');
-    let filesArr = files.split(",");
-    PDFMerge(filesArr).then((buffer) => {
-        res.writeHead(200, {
-            'Content-Type': 'application/pdf',
-            'Content-Disposition': 'filename=output.pdf',
-            'Content-Length': buffer.length
-        });
-        res.end(buffer);
-    }).catch((err) => returnHTMLBlob(res, `<h2>File not found</h2><b>stacktrace:</b><br>${err}`))
-});
-
-
 // Returns an html blob to the client, used for error messages and such
 function returnHTMLBlob(res, htmlBlob) {
     res.send(`<html>
