@@ -20,7 +20,7 @@ app.use('/getpdf', (req, res) => {
     //when no data is sent
     if (!Object.keys(d).length) { returnHTMLBlob(res, `Error: no POST data was sent`) } else {
         // when only one document is passed
-        if(Object.keys(d).length === 1){ return fetchSinglePdf(res, d.documents[0])}
+        if(d.documents.length === 1){ return fetchSinglePdf(res, d.documents[0])}
         MergePDFs(d.documents).then((buffer) => {
             res.writeHead(200, {
                 'Content-Type': 'application/pdf',
