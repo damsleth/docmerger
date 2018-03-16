@@ -1,6 +1,6 @@
 var fetch = require("node-fetch")
 var fs = require("fs")
-var os = require("os")
+// var os = require("os")
 var express = require("express")
 var PDFMerge = require("pdf-merge")
 var app = express();
@@ -8,10 +8,10 @@ app.listen(process.env.PORT || 7000);
 app.use(express.json());       // to support JSON-encoded bodies
 app.use(express.urlencoded({ extended: true }));
 
-let ipaddr = "";
-const ifaces = os.networkInterfaces()
-if (ifaces.en0[1]) { ipaddr = `at http://${ifaces.en0[1].address}:7000/getpdf` }
-console.log(`PDF merger up and running ${ipaddr}`)
+// let ipaddr = "";
+// const ifaces = os.networkInterfaces()
+// if (ifaces.en0[1]) { ipaddr = `at http://${ifaces.en0[1].address}:7000/getpdf` }
+console.log(`PDF merger up and running`)
 // TODO: limit proxy requests to current top-level-domain only, to avoid proxy exploitation
 // TODO: Delete temp files
 
