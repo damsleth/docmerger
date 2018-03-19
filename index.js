@@ -28,7 +28,14 @@ app.use('/getpdf', (req, res) => {
                 'Content-Length': buffer.length
             });
             res.end(buffer);
-        })
+            // The document(s) are corrupt, or otherwise
+        }).catch((err)=>
+    {
+        res.writeHead(418,{
+            "Content-Type":"text/html"
+        });
+        res.end(`Det oppstod en feil ved generering av pdf-dokumentet. stacktrace: ${err}`)
+    })
     }
 });
 
