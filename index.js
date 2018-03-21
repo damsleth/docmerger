@@ -20,7 +20,7 @@ app.use('/getpdf', (req, res) => {
     //when no data is sent
     if (!Object.keys(d).length) { returnHTMLBlob(res, `Error: no POST data was sent`) } else {
         // when only one document is passed
-        if(d.documents.length === 1){ return fetchSinglePdf(res, d.documents[0])}
+        if (d.documents.length === 1) { return fetchSinglePdf(res, d.documents[0]) }
         MergePDFs(d.documents).then((buffer) => {
             res.writeHead(200, {
                 'Content-Type': 'application/pdf',
@@ -29,13 +29,13 @@ app.use('/getpdf', (req, res) => {
             });
             res.end(buffer);
             // The document(s) are corrupt, or otherwise
-        }).catch((err)=>
-    {
-        res.writeHead(418,{
-            "Content-Type":"text/html"
-        });
-        res.end(`Det oppstod en feil ved generering av pdf-dokumentet. stacktrace: ${err}`)
-    })
+        }).catch((err) => {
+            // I'm a teapot :-)
+            res.writeHead(418, {
+                "Content-Type": "text/html"
+            });
+            res.end(`Det oppstod en feil ved generering av pdf-dokumentet. stacktrace: ${err}`)
+        })
     }
 });
 
@@ -45,7 +45,7 @@ function fetchSinglePdf(res, document) {
             pdfData = new Buffer(data)
             res.writeHead(200, {
                 'Content-Type': 'application/pdf',
-                'Content-Disposition': 'attachment; filename='+document.title+'.pdf',
+                'Content-Disposition': 'attachment; filename=' + document.title + '.pdf',
                 'Content-Length': pdfData.length
             });
             res.end(pdfData);
@@ -80,7 +80,8 @@ async function MergePDFs(documents) {
         console.log("saved " + doc.title + " to disk")
         pdfPathArr.push(`${SAVE_FOLDER}${doc.title}.pdf`)
     }
-    let pdfBuffer = await PDFMerge(pdfPathArr,{})
+    let sortedPdfPathArr = pdfPathArr.sort();
+    let pdfBuffer = await PDFMerge(sortedPdfPathArr, {})
     RemoveTempFiles(pdfPathArr)
     return pdfBuffer
 }
