@@ -8,9 +8,6 @@ app.use(express.json());       // to support JSON-encoded bodies
 app.use(express.urlencoded({ extended: true }));
 console.log(`PDF merger up and running`)
 
-// TODO: limit proxy requests to current top-level-domain only, to avoid proxy exploitation
-// TODO: Ensure, when a single pdf is requested, that the returned blob doesn't open in print-mode when it's opened
-
 //temp dir environment variables differ across platforms
 const SAVE_FOLDER = process.env.TEMP ? process.env.TEMP : process.env.TMPDIR
 
@@ -57,7 +54,7 @@ function RemoveTempFiles(tempFiles) {
     tempFiles.map(file => {
         fs.unlink(file, function (err) {
             if (err && err.code == 'ENOENT') {
-                // file doens't exist
+                // file doesn't exist
                 console.info(`File ${file} doesn't exist, won't remove it.`);
             } else if (err) {
                 // other errors, e.g. maybe we don't have enough permission
@@ -80,17 +77,20 @@ async function MergePDFs(documents) {
         console.log("saved " + doc.title + " to disk")
         pdfPathArr.push(`${SAVE_FOLDER}${doc.title}.pdf`)
     }
-    let sortedPdfPathArr = pdfPathArr.sort();
+    let sortedPdfPathArr = pdfPathArr.sort((a, b) => {
+        let spmnr = (x) => x.substring(x.search(/\d/), x.length)
+        return spmnr(a) - spmnr(b)
+    })
     let pdfBuffer = await PDFMerge(sortedPdfPathArr, {})
     RemoveTempFiles(pdfPathArr)
     return pdfBuffer
 }
 
 async function writeFile(path, data, opts = 'utf8') {
-    new Promise((res, rej) => {
+    new Promise((resolve, reject) => {
         fs.writeFile(path, data, opts, (err) => {
-            if (err) rej(err)
-            else res()
+            if (err) reject(err)
+            else resolve()
         })
     })
 }
@@ -108,6 +108,5 @@ function returnHTMLBlob(res, htmlBlob) {
 app.use('/', (req, res) => {
     returnHTMLBlob(res, `
 <h2>This is a pdf proxy API</h2>
-<ul><li>/getpdf?[url] - returns a merged pdf from a set of OWA document IDs</li>
-<li>/getlocalpdf?[url] - merge and return pdfs from the server filesystem - <b>dev only</b></li>`)
+<ul><li><b>usage:</b> /getpdf?[url] - returns a merged pdf from an array of document urls</li>`)
 });
