@@ -21,7 +21,7 @@ if (process.env._system_name === "OSX") {
 }
 
 fs.stat(__filename.split(/[\\/]/).pop(), (err, stat) => {
-    console.log(`PDF merger running. last modified ${stat.mtime.toDateString()}`)
+    console.log(`PDF merger up and running\nLast modified ${stat.mtime.toDateString()}`)
 })
 
 //temp dir environment variables differ across platforms
