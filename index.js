@@ -2,11 +2,27 @@ var fetch = require("node-fetch")
 var fs = require("fs")
 var express = require("express")
 var PDFMerge = require("pdf-merge")
+var cors = require('cors');
 var app = express();
 app.listen(process.env.PORT || 7002);
 app.use(express.json());       // to support JSON-encoded bodies
 app.use(express.urlencoded({ extended: true }));
-console.log(`PDF merger up and running`)
+
+//If We're debugging, enable cors
+if (process.env._system_name === "OSX") {
+    console.log(`Debugging, CORS enabled`)
+    app.use(cors({
+        'allowedHeaders': ['sessionId', 'Content-Type'],
+        'exposedHeaders': ['sessionId'],
+        'origin': '*',
+        'methods': 'GET,HEAD,PUT,PATCH,POST,DELETE',
+        'preflightContinue': false
+    }));
+}
+
+fs.stat(__filename.split(/[\\/]/).pop(), (err, stat) => {
+    console.log(`PDF merger running. last modified ${stat.mtime.toDateString()}`)
+})
 
 //temp dir environment variables differ across platforms
 const SAVE_FOLDER = process.env.TEMP ? process.env.TEMP : process.env.TMPDIR
@@ -42,10 +58,37 @@ function fetchSinglePdf(res, document) {
             pdfData = new Buffer(data)
             res.writeHead(200, {
                 'Content-Type': 'application/pdf',
-                'Content-Disposition': 'attachment; filename=' + document.title + '.pdf',
+                'Content-Disposition': 'attachment; filename=' + document.Title + '.pdf',
                 'Content-Length': pdfData.length
             });
             res.end(pdfData);
+        })
+    })
+}
+
+async function MergePDFs(documents) {
+    console.log("merging documents, please stand by")
+    let pdfs = [];
+    for (let i in documents) {
+        let doc = documents[i]
+        console.log(`fetching ${doc.Title}`)
+        let pdf = await fetch(doc.Url)
+        let data = await pdf.arrayBuffer()
+        await writeFile(`${SAVE_FOLDER}/${doc.Title}.pdf`, new Buffer(data))
+        console.log("saved " + doc.Title + " to disk")
+        pdfs.push({ path: `${SAVE_FOLDER}/${doc.Title}.pdf`, spmnr: doc.SpmNr })
+    }
+    let sortedPdfs = pdfs.sort((a, b) => a.spmnr - b.spmnr).map(p => p.path)
+    let pdfBuffer = await PDFMerge(sortedPdfs, {})
+    RemoveTempFiles(pdfs)
+    return pdfBuffer
+}
+
+async function writeFile(path, data, opts = 'utf8') {
+    new Promise((resolve, reject) => {
+        fs.writeFile(path, data, opts, (err) => {
+            if (err) reject(err)
+            else resolve()
         })
     })
 }
@@ -63,33 +106,6 @@ function RemoveTempFiles(tempFiles) {
                 console.info(`Temp file ${file.path} deleted`);
             }
         });
-    })
-}
-
-async function MergePDFs(documents) {
-    console.log("merging documents, please stand by")
-    let pdfs = [];
-    for (let i in documents) {
-        let doc = documents[i]
-        console.log(`fetching ${doc.Url}`)
-        let pdf = await fetch(doc.Url)
-        let data = await pdf.arrayBuffer()
-        await writeFile(`${SAVE_FOLDER}/${doc.Title}.pdf`, new Buffer(data))
-        console.log("saved " + doc.Title + " to disk")
-        pdfs.push({ path: `${SAVE_FOLDER}/${doc.Title}.pdf`, spmnr: doc.SpmNr })
-    }
-    let sortedPdfPathArr = pdfs.sort((a, b) => a.spmnr - b.spmnr)
-    let pdfBuffer = await PDFMerge(sortedPdfPathArr, {})
-    RemoveTempFiles(pdfs)
-    return pdfBuffer
-}
-
-async function writeFile(path, data, opts = 'utf8') {
-    new Promise((resolve, reject) => {
-        fs.writeFile(path, data, opts, (err) => {
-            if (err) reject(err)
-            else resolve()
-        })
     })
 }
 
