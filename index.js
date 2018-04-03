@@ -71,11 +71,12 @@ async function MergePDFs(documents) {
     let pdfs = [];
     for (let i in documents) {
         let doc = documents[i]
+        console.log(`fetching ${doc.Url}`)
         let pdf = await fetch(doc.Url)
         let data = await pdf.arrayBuffer()
-        await writeFile(`${SAVE_FOLDER}/${doc.title}.pdf`, new Buffer(data))
+        await writeFile(`${SAVE_FOLDER}/${doc.Title}.pdf`, new Buffer(data))
         console.log("saved " + doc.title + " to disk")
-        pdfs.push({ path: `${SAVE_FOLDER}/${doc.title}.pdf`, spmnr: doc.spmnr })
+        pdfs.push({ path: `${SAVE_FOLDER}/${doc.Title}.pdf`, spmnr: doc.SpmNr })
     }
     let sortedPdfPathArr = pdfs.sort((a, b) => a.spmnr - b.spmnr)
     let pdfBuffer = await PDFMerge(sortedPdfPathArr, {})
