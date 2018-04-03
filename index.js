@@ -2,7 +2,6 @@ var fetch = require("node-fetch")
 var fs = require("fs")
 var express = require("express")
 var PDFMerge = require("pdf-merge")
-var cors = require('cors');
 var app = express();
 app.listen(process.env.PORT || 7002);
 app.use(express.json());       // to support JSON-encoded bodies
@@ -10,6 +9,7 @@ app.use(express.urlencoded({ extended: true }));
 
 //If We're debugging, enable cors
 if (process.env._system_name === "OSX") {
+    var cors = require('cors');
     console.log(`Debugging, CORS enabled`)
     app.use(cors({
         'allowedHeaders': ['sessionId', 'Content-Type'],
