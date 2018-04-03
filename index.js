@@ -67,11 +67,10 @@ function fetchSinglePdf(res, document) {
 }
 
 async function MergePDFs(documents) {
-    console.log("merging documents, please stand by")
+    console.log("Merging documents, stand by")
     let pdfs = [];
     for (let i in documents) {
         let doc = documents[i]
-        console.log(`fetching ${doc.Title}`)
         let pdf = await fetch(doc.Url)
         let data = await pdf.arrayBuffer()
         await writeFile(`${SAVE_FOLDER}/${doc.Title}.pdf`, new Buffer(data))
