@@ -1,3 +1,10 @@
+/**
+ * SFS OWA Proxy and PDF merger v1.0.
+ * This app takes a list of pdfs, merges them and returns them as a single PDF to the client
+ * This proxy is running on port 7001, and accepts POSTS to /getpdf with an object like this 
+ * { documents:[{Title:string, Url:string:SpmNr:string}]}
+ */
+
 var fetch = require("node-fetch")
 var fs = require("fs")
 var express = require("express")
@@ -77,7 +84,10 @@ async function MergePDFs(documents) {
         console.log("saved " + doc.Title + " to disk")
         pdfs.push({ path: `${SAVE_FOLDER}/${doc.Title}.pdf`, spmnr: doc.SpmNr })
     }
-    let sortedPdfs = pdfs.sort((a, b) => a.spmnr - b.spmnr).map(p => p.path)
+
+    // We could do sorting here too, but it's handled client side for simplicity
+    // let sortedPdfs = pdfs.sort((a, b) => a.spmnr - b.spmnr).map(p => p.path)
+    let sortedPdfs = pdfs.map(p => p.path)
     let pdfBuffer = await PDFMerge(sortedPdfs, {})
     RemoveTempFiles(pdfs)
     return pdfBuffer
