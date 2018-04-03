@@ -37,7 +37,7 @@ app.use('/getpdf', (req, res) => {
 });
 
 function fetchSinglePdf(res, document) {
-    fetch(document.pdfUrl).then(doc => {
+    fetch(document.Url).then(doc => {
         doc.arrayBuffer().then(data => {
             pdfData = new Buffer(data)
             res.writeHead(200, {
@@ -52,15 +52,15 @@ function fetchSinglePdf(res, document) {
 
 function RemoveTempFiles(tempFiles) {
     tempFiles.map(file => {
-        fs.unlink(file, function (err) {
+        fs.unlink(file.path, function (err) {
             if (err && err.code == 'ENOENT') {
                 // file doesn't exist
-                console.info(`File ${file} doesn't exist, won't remove it.`);
+                console.info(`File ${file.path} doesn't exist, won't remove it.`);
             } else if (err) {
                 // other errors, e.g. maybe we don't have enough permission
-                console.error(`Error occurred while trying to remove file ${file}`);
+                console.error(`Error occurred while trying to remove file ${file.path}`);
             } else {
-                console.info(`Temp file ${file} deleted`);
+                console.info(`Temp file ${file.path} deleted`);
             }
         });
     })
@@ -68,21 +68,18 @@ function RemoveTempFiles(tempFiles) {
 
 async function MergePDFs(documents) {
     console.log("merging documents, please stand by")
-    let pdfPathArr = [];
+    let pdfs = [];
     for (let i in documents) {
         let doc = documents[i]
-        let pdf = await fetch(doc.pdfUrl)
+        let pdf = await fetch(doc.Url)
         let data = await pdf.arrayBuffer()
-        await writeFile(`${SAVE_FOLDER}${doc.title}.pdf`, new Buffer(data))
+        await writeFile(`${SAVE_FOLDER}/${doc.title}.pdf`, new Buffer(data))
         console.log("saved " + doc.title + " to disk")
-        pdfPathArr.push(`${SAVE_FOLDER}${doc.title}.pdf`)
+        pdfs.push({ path: `${SAVE_FOLDER}/${doc.title}.pdf`, spmnr: doc.spmnr })
     }
-    let sortedPdfPathArr = pdfPathArr.sort((a, b) => {
-        let spmnr = (x) => x.substring(x.search(/\d/), x.length)
-        return spmnr(a) - spmnr(b)
-    })
+    let sortedPdfPathArr = pdfs.sort((a, b) => a.spmnr - b.spmnr)
     let pdfBuffer = await PDFMerge(sortedPdfPathArr, {})
-    RemoveTempFiles(pdfPathArr)
+    RemoveTempFiles(pdfs)
     return pdfBuffer
 }
 
