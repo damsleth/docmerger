@@ -46,5 +46,15 @@ svc.on('install',function(){
 svc.install();
 ```
 
+# Uninstall windows service
+```
+svc.on('uninstall',function(){
+  console.log('Uninstall complete.');
+  console.log('The service exists: ',svc.exists);
+});
+svc.uninstall();
+```
+
+
 ## maintainers
 DSS-Team, mainly @damsleth
