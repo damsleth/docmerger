@@ -18,6 +18,33 @@ Pass a url to a pdf to the server, and it will return the PDF to the user, bypas
 * npm install
 * node index.js
 
+# Install as a windows service
+At commandline 
+```
+npm install -g node-windows
+npm link node-windows
+```
+
+in node repl
+```
+var Service = require('node-windows').Service;
+
+var svc = new Service({
+  name:'sfsowaproxy',
+  description: 'SFS Office Webapps Proxy for PDF merging',
+  script: 'M:\\code\\dss-owaproxy\\index.js',
+env: {
+    name: "TEMP",
+    value: process.env["TEMP"] // service is now able to access the user who created its' home directory
+  }
+});
+
+svc.on('install',function(){
+      svc.start();
+});
+
+svc.install();
+```
 
 ## maintainers
 DSS-Team, mainly @damsleth
