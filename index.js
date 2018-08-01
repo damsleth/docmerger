@@ -41,6 +41,7 @@ app.use('/getpdf', (req, res) => {
     if (!Object.keys(d).length) { returnHTMLBlob(res, `Error: no POST data was sent`) } else {
         // when only one document is passed
         if (d.documents.length === 1) { return fetchSinglePdf(res, d.documents[0]) }
+
         MergePDFs(d.documents).then((buffer) => {
             res.writeHead(200, {
                 'Content-Type': 'application/pdf',
@@ -74,23 +75,31 @@ function fetchSinglePdf(res, document) {
 }
 
 async function MergePDFs(documents) {
-    console.log("Merging documents, stand by")
+    console.log(`Saving ${documents.length} documents to disk`)
     let pdfs = [];
     for (let i in documents) {
+        let nr = parseInt(i,10) + 1
         let doc = documents[i]
         let pdf = await fetch(doc.Url)
         let data = await pdf.arrayBuffer()
-        await writeFile(`${SAVE_FOLDER}/${doc.Title}.pdf`, new Buffer(data))
-        console.log("saved " + doc.Title + " to disk")
-        pdfs.push({ path: `${SAVE_FOLDER}/${doc.Title}.pdf`, spmnr: doc.SpmNr })
+        let title = doc.Title.replace(/ |-|\)|\(/g,"_").replace(/_+/g,"_")
+        await writeFile(`${SAVE_FOLDER}/${title}.pdf`, new Buffer(data))
+        console.log(`${nr}/${documents.length}: ${title} saved to disk`)
+        pdfs.push({ path: `${SAVE_FOLDER}/${title}.pdf`, spmnr: doc.SpmNr })
     }
+    console.log(`${documents.length} documents successfully saved`)
 
     // We could do sorting here too, but it's handled client side for simplicity
     // let sortedPdfs = pdfs.sort((a, b) => a.spmnr - b.spmnr).map(p => p.path)
     let sortedPdfs = pdfs.map(p => p.path)
-    let pdfBuffer = await PDFMerge(sortedPdfs, {})
-    RemoveTempFiles(pdfs)
-    return pdfBuffer
+    console.log(`Merging documents...`)
+
+    return PDFMerge(sortedPdfs).then(buffer=>{
+        if(buffer){console.log("Documents successfully merged, removing temp files")}
+        RemoveTempFiles(pdfs)
+        console.log(`Temp files deleted, returning merged pdf to user`)
+        return buffer
+    })
 }
 
 async function writeFile(path, data, opts = 'utf8') {
