@@ -63,7 +63,7 @@ app.use('/getpdf', (req, res) => {
 function fetchSinglePdf(res, document) {
     fetch(document.Url).then(doc => {
         doc.arrayBuffer().then(data => {
-            pdfData = new Buffer(data)
+            pdfData = Buffer.from(data)
             res.writeHead(200, {
                 'Content-Type': 'application/pdf',
                 'Content-Disposition': 'attachment; filename=' + document.Title + '.pdf',
@@ -78,12 +78,14 @@ async function MergePDFs(documents) {
     console.log(`Saving ${documents.length} documents to disk`)
     let pdfs = [];
     for (let i in documents) {
-        let nr = parseInt(i,10) + 1
+        let nr = parseInt(i, 10) + 1
         let doc = documents[i]
         let pdf = await fetch(doc.Url)
         let data = await pdf.arrayBuffer()
-        let title = doc.Title.replace(/ |-|\)|\(/g,"_").replace(/_+/g,"_")
-        await writeFile(`${SAVE_FOLDER}/${title}.pdf`, new Buffer(data))
+        let title = `tmp_${i}`;
+        // TODO: CHANGE THIS TO A GUID - TEMP NAMES NEED NOT BE MEANINGFUL, 
+        // AND THE GENERATOR CRASHES WHEN MERGING FILES WITH PERIODS IN THE TITLE
+        await writeFile(`${SAVE_FOLDER}/${title}.pdf`, Buffer.from(data))
         console.log(`${nr}/${documents.length}: ${title} saved to disk`)
         pdfs.push({ path: `${SAVE_FOLDER}/${title}.pdf`, spmnr: doc.SpmNr })
     }
@@ -94,8 +96,8 @@ async function MergePDFs(documents) {
     let sortedPdfs = pdfs.map(p => p.path)
     console.log(`Merging documents...`)
 
-    return PDFMerge(sortedPdfs).then(buffer=>{
-        if(buffer){console.log("Documents successfully merged, removing temp files")}
+    return PDFMerge(sortedPdfs).then(buffer => {
+        if (buffer) { console.log("Documents successfully merged, removing temp files") }
         RemoveTempFiles(pdfs)
         console.log(`Temp files deleted, returning merged pdf to user`)
         return buffer
