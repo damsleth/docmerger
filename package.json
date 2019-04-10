@@ -1,26 +1,24 @@
 {
   "name": "dss-owaproxy",
-  "version": "1.0.0",
+  "version": "1.19.4",
   "description": "OWA proxy for fetching PDFs from Word Automation Services ",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "scripts": {},
   "repository": {
     "type": "git",
-    "url": "git+https://kimzter@bitbucket.org/puzzlepart/dss-owaproxy.git"
+    "url": "git+https://bitbucket.org/puzzlepart/dss-owaproxy.git"
   },
   "author": "",
   "license": "ISC",
   "homepage": "https://bitbucket.org/puzzlepart/dss-owaproxy#readme",
   "devDependencies": {
-    "nodemon": "^1.17.1"
+    "nodemon": "^1.18.11"
   },
   "dependencies": {
-    "cors": "^2.8.4",
-    "express": "^4.16.2",
-    "node-fetch": "^2.1.1",
-    "pdf-merge": "^1.0.2",
-    "request": "^2.83.0"
+    "cors": "^2.8.5",
+    "express": "^4.16.4",
+    "node-fetch": "^2.3.0",
+    "pdf-merge": "^1.2.0",
+    "request": "^2.88.0"
   }
 }

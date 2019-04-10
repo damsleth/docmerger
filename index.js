@@ -14,8 +14,9 @@ app.listen(process.env.PORT || 7002);
 app.use(express.json());       // to support JSON-encoded bodies
 app.use(express.urlencoded({ extended: true }));
 
-//If We're debugging, enable cors
-if (process.env._system_name === "OSX") {
+// If We're debugging, enable cors.
+// Debugging enabled on MacOS, aka darwinq
+if (process.platform === "darwin") {
     var cors = require('cors');
     console.log(`Debugging, CORS enabled`)
     app.use(cors({
@@ -82,9 +83,8 @@ async function MergePDFs(documents) {
         let doc = documents[i]
         let pdf = await fetch(doc.Url)
         let data = await pdf.arrayBuffer()
-        let title = `tmp_${i}`;
-        // TODO: CHANGE THIS TO A GUID - TEMP NAMES NEED NOT BE MEANINGFUL, 
-        // AND THE GENERATOR CRASHES WHEN MERGING FILES WITH PERIODS IN THE TITLE
+        // 6 character (sometimes 5) random hash value
+        let title = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 6);
         await writeFile(`${SAVE_FOLDER}/${title}.pdf`, Buffer.from(data))
         console.log(`${nr}/${documents.length}: ${title} saved to disk`)
         pdfs.push({ path: `${SAVE_FOLDER}/${title}.pdf`, spmnr: doc.SpmNr })
