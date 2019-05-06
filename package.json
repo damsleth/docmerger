@@ -1,14 +1,14 @@
 {
   "name": "dss-owaproxy",
-  "version": "1.19.4",
-  "description": "OWA proxy for fetching PDFs from Word Automation Services ",
+  "version": "1.19.5",
+  "description": "OWA proxy for fetching PDFs from Word Automation Services",
   "main": "index.js",
   "scripts": {},
   "repository": {
     "type": "git",
     "url": "git+https://bitbucket.org/puzzlepart/dss-owaproxy.git"
   },
-  "author": "",
+  "author": "https://github.com/damsleth",
   "license": "ISC",
   "homepage": "https://bitbucket.org/puzzlepart/dss-owaproxy#readme",
   "devDependencies": {

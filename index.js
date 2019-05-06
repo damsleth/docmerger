@@ -23,7 +23,7 @@ if (process.platform === "darwin") {
         'allowedHeaders': ['sessionId', 'Content-Type'],
         'exposedHeaders': ['sessionId'],
         'origin': '*',
-        'methods': 'GET,HEAD,PUT,PATCH,POST,DELETE',
+        'methods': 'GET,HEAD,POST,',
         'preflightContinue': false
     }));
 }
@@ -37,42 +37,50 @@ const SAVE_FOLDER = process.env.TEMP ? process.env.TEMP : process.env.TMPDIR
 
 // Main endpoint that returns a merged PDF
 app.use('/getpdf', (req, res) => {
-    let d = (Object.keys(req.body).length > 0) ? req.body : req.query;
-    //when no data is sent
-    if (!Object.keys(d).length) { returnHTMLBlob(res, `Error: no POST data was sent`) } else {
-        // when only one document is passed
-        if (d.documents.length === 1) { return fetchSinglePdf(res, d.documents[0]) }
+    try {
+        let d = (Object.keys(req.body).length > 0) ? req.body : req.query;
+        //when no data is sent
+        if (!Object.keys(d).length) { returnHTMLBlob(res, `Error: no POST data was sent`) } else {
+            // when only one document is passed
+            if (d.documents.length === 1) { return fetchSinglePdf(res, d.documents[0]) }
 
-        MergePDFs(d.documents).then((buffer) => {
-            res.writeHead(200, {
-                'Content-Type': 'application/pdf',
-                'Content-Disposition': 'filename=dokument.pdf',
-                'Content-Length': buffer.length
-            });
-            res.end(buffer);
-            // The document(s) are corrupt, or otherwise
-        }).catch((err) => {
-            // I'm a teapot :-)
-            res.writeHead(418, {
-                "Content-Type": "text/html"
-            });
-            res.end(`Det oppstod en feil ved generering av pdf-dokumentet. stacktrace: ${err}`)
+            MergePDFs(d.documents).then((buffer) => {
+                res.writeHead(200, {
+                    'Content-Type': 'application/pdf',
+                    'Content-Disposition': 'filename=dokument.pdf',
+                    'Content-Length': buffer.length
+                });
+                res.end(buffer);
+                // The document(s) are corrupt, or otherwise
+            })
+        }
+    } catch (err) {
+        res.writeHead(418, {
+            "Content-Type": "text/html"
         })
+        res.end(`Det oppstod en feil ved generering av pdf-dokumentet (/getpdf try/catch). stacktrace: ${err}`)
     }
 });
 
 function fetchSinglePdf(res, document) {
-    fetch(document.Url).then(doc => {
-        doc.arrayBuffer().then(data => {
-            pdfData = Buffer.from(data)
-            res.writeHead(200, {
-                'Content-Type': 'application/pdf',
-                'Content-Disposition': 'attachment; filename=' + document.Title + '.pdf',
-                'Content-Length': pdfData.length
-            });
-            res.end(pdfData);
+    try {
+        fetch(document.Url).then(doc => {
+            doc.arrayBuffer().then(data => {
+                pdfData = Buffer.from(data)
+                res.writeHead(200, {
+                    'Content-Type': 'application/pdf',
+                    'Content-Disposition': 'attachment; filename=' + document.Title + '.pdf',
+                    'Content-Length': pdfData.length
+                });
+                res.end(pdfData);
+            })
         })
-    })
+    } catch (err) {
+        res.writeHead(418, {
+            "Content-Type": "text/html"
+        })
+        res.send(`Error in fetchSinglePdf. stacktrace: ${err}`)
+    }
 }
 
 async function MergePDFs(documents) {
@@ -86,7 +94,7 @@ async function MergePDFs(documents) {
         // 6 character (sometimes 5) random hash value
         let title = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 6);
         await writeFile(`${SAVE_FOLDER}/${title}.pdf`, Buffer.from(data))
-        console.log(`${nr}/${documents.length}: ${title} saved to disk`)
+        console.log(`${nr}/${documents.length}: ${title} saved to disk. (Original title: "${doc.Title}")`)
         pdfs.push({ path: `${SAVE_FOLDER}/${title}.pdf`, spmnr: doc.SpmNr })
     }
     console.log(`${documents.length} documents successfully saved`)
