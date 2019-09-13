@@ -66,7 +66,7 @@ function fetchSinglePdf(res, document) {
     try {
         fetch(document.Url).then(doc => {
             doc.arrayBuffer().then(data => {
-                pdfData = Buffer.from(data)
+                let pdfData = Buffer.from(data)
                 res.writeHead(200, {
                     'Content-Type': 'application/pdf',
                     'Content-Disposition': 'attachment; filename=' + document.Title + '.pdf',
