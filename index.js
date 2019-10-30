@@ -55,7 +55,7 @@ app.use('/getpdf', (req, res) => {
             })
         }
     } catch (err) {
-        res.writeHead(418, {
+        res.writeHead(500, {
             "Content-Type": "text/html"
         })
         res.end(`Det oppstod en feil ved generering av pdf-dokumentet (/getpdf try/catch). stacktrace: ${err}`)
@@ -76,7 +76,7 @@ function fetchSinglePdf(res, document) {
             })
         })
     } catch (err) {
-        res.writeHead(418, {
+        res.writeHead(500, {
             "Content-Type": "text/html"
         })
         res.send(`Error in fetchSinglePdf. stacktrace: ${err}`)
@@ -139,6 +139,7 @@ function RemoveTempFiles(tempFiles) {
 
 // Returns an html blob to the client, used for error messages and such
 function returnHTMLBlob(res, htmlBlob) {
+    res.writeHead(500, { "Content-Type": "text/html" })
     res.send(`<html>
     <body style="font-family:Helvetica,Arial,Sans-Serif;max-width:50%;margin:20px 0 0 20px;">
     ${htmlBlob}
