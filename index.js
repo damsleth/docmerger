@@ -139,7 +139,6 @@ function RemoveTempFiles(tempFiles) {
 
 // Returns an html blob to the client, used for error messages and such
 function returnHTMLBlob(res, htmlBlob) {
-    res.writeHead(500, { "Content-Type": "text/html" })
     res.send(`<html>
     <body style="font-family:Helvetica,Arial,Sans-Serif;max-width:50%;margin:20px 0 0 20px;">
     ${htmlBlob}
