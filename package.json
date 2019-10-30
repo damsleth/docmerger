@@ -1,6 +1,6 @@
 {
   "name": "dss-owaproxy",
-  "version": "1.19.9",
+  "version": "1.19.11",
   "description": "Office Web Apps proxy for fetching PDFs from Word Automation Services",
   "main": "index.js",
   "scripts": {},
