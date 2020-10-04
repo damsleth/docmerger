@@ -1,9 +1,8 @@
 {
   "name": "dss-owaproxy",
-  "version": "2.20.09",
-  "description": "Office Web Apps proxy for fetching and merging PDFs and DOCXes from Word Automation Services and Office Online Server",
+  "version": "1.19.11",
+  "description": "Office Web Apps proxy for fetching PDFs from Word Automation Services",
   "main": "index.js",
-  "module": "esnext",
   "scripts": {},
   "repository": {
     "type": "git",
@@ -15,8 +14,8 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.17.1",
-    "node-fetch": "^2.6.1",
-    "node-pandoc": "^0.3.0",
-    "pdf-merge": "^1.2.0"
+    "node-fetch": "^2.6.0",
+    "pdf-merge": "^1.2.0",
+    "request": "^2.88.0"
   }
 }

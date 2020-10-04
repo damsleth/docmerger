@@ -1,23 +1,34 @@
-# DSS-PDFPROXY
+# DSS-OWAPROXY
 
-A simple node.js proxy server, acting as middleware between the client and OWA/WOPI/Word Automation Services.
+node.js (express) server acting as middleware between the client and OWA/WOPI/Word Automation Services, providing pdf and docx merge functionality using [pandoc](https://pandoc.org/) and [PDFtk](https://www.pdflabs.com/tools/pdftk-server/).
+
+Supports merging Docx and PDF documents, though not both simultaneously.
 
 ## Usage
 
-Pass a url to a pdf to the server, and it will return the PDF to the user, bypassing CORS
+Pass an object, either 
+* `{documents:[{Title:<string>,Url:<string-to-pdf>}]}` to the `/getpdf`-endpoint to return a PDF or 
+* `{documents:[{Title:<string>,Url:<string>,Content:<ArrayBuffer>}]}` to the `/getdoc`-endpoint to return a docx
+
+These are used by the `Last ned samlet PDF` and `Last ned samlet Docx` User Custom Actions
 
 ## Prerequisites / Dependencies
 
-* nodejs v.8.9.4 (LTS) installed on machine running the server
+* nodejs LTS >=8 installed on machine running the server
     * express
     * node-fetch
     * nodemon (for dev-purposes)
-* PDFtk - for merging PDFs.
+* [pandoc](https://pandoc.org/) - for docx merging
+* [PDFtk](https://www.pdflabs.com/tools/pdftk-server/) - for pdf merging
 
 ## Installation
 
-* Win: Download and install PDFtk from https://www.pdflabs.com/tools/pdftk-the-pdf-toolkit/
-* MacOS: brew install https://raw.githubusercontent.com/turforlag/homebrew-cervezas/master/pdftk.rb
+* Win: 
+  * Download and install PDFtk from https://www.pdflabs.com/tools/pdftk-the-pdf-toolkit/
+  * Download pandoc (msi installer or executable as .zip) from https://github.com/jgm/pandoc/releases/tag/2.10.1
+* MacOS:
+  * brew install https://raw.githubusercontent.com/turforlag/homebrew-cervezas/master/pdftk.rb
+  * brew install pandoc
 * npm install
 * node index.js
 
