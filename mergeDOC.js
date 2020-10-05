@@ -3,9 +3,9 @@ const fs = require('fs')
 const fsasync = require("fs").promises
 const SAVE_FOLDER = process.env.TEMP ? process.env.TEMP : process.env.TMPDIR // Temp dir environment variables differ across platforms.
 
-module.exports = async function (documents) {
+module.exports = async function (documents, trackchanges = true) {
 
-    // Takes an object with an array of { documents:[{Title:string, Url:string:SpmNr:string}] } as input.
+    // Takes an object with an array of { documents:[{Title:<string>, Url:<string>, Content:<ArrayBuffer>}] } as input.
     console.log(`Saving ${documents.length} documents to disk`)
     let docsToMerge = [];
     for (let i in documents) {
@@ -23,12 +23,13 @@ module.exports = async function (documents) {
     // We could do sorting here too, but it's handled client side for simplicity
     // let sortedPdfs = pdfs.sort((a, b) => a.spmnr - b.spmnr).map(p => p.path)
     let sortedDocs = docsToMerge.map(p => p.path)
-    console.log(`Merging documents...`)
-
     let src = sortedDocs.join(" ")
-    console.log(`MERGING ${sortedDocs.join("\n")}`)
+    let trackChangesParam = trackchanges ? "all" : "accept";
     let mergedFilename = `${SAVE_FOLDER}${new Date().getTime()}.docx` // getTime() to avoid filename collisions
-    let params = `--track-changes=all --output ${mergedFilename}`
+    let params = `--track-changes=${trackChangesParam} --output ${mergedFilename}`
+    console.log(`Merging documents...`)
+    console.log(`MERGING ${sortedDocs.join("\n")}`)
+
     await pandoc(`${src} ${params}`)
     RemoveTempFiles(docsToMerge)
     return getMergedDocument(mergedFilename).then(buffer => buffer)

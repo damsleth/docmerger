@@ -1,14 +1,13 @@
 /**
- * SFS OWA Proxy and PDF merger v1.0.
+ * SFS OWA Proxy and PDF merger v1.5.
  * This app takes a list of pdfs or docxes, merges them and returns them as a single pdf or docx to the client
  * This proxy is running on port 7001, and accepts POSTS to /getpdf and /getdoc with an object like this 
  * /getpdf: { documents:[{Title:string, Url:string, SpmNr:string}]} - same structure as previous version to ensure backwards compatibility
- * /getdocx: {format: docx||pdf||markdown||whatever, documents:[{Title:string, Url:string, Body:ArrayBuffer}]} - sharepoint docxes don't have a public url like pdfs 
+ * /getdoc: {format: docx||pdf||markdown||whatever, documents:[{Title:string, Url:string, Body:ArrayBuffer}]} - sharepoint docxes don't have a public url like pdfs, so we have to pass the doc data
  * 
  * Last updated 4.10.2020 by @damsleth
  */
 
-// const fetch = require("node-fetch")
 const fs = require("fs")
 const express = require("express")
 const mergePDF = require("./mergePDF")
@@ -19,7 +18,7 @@ app.use(express.json({ limit: "50mb" }))       // to support JSON-encoded bodies
 app.use(express.urlencoded({ extended: true, limit: "50mb" })) // big limit so we can pass big bodies
 
 // If We're debugging, enable CORS, so we accept calls from anywhere.
-// Debugging enabled on MacOS, aka darwin
+// Debugging is auto enabled on MacOS, aka darwin
 if (process.platform === "darwin") {
     const cors = require('cors');
     console.log(`Debugging, CORS enabled`)
@@ -40,52 +39,58 @@ fs.stat(__filename.split(/[\\/]/).pop(), (err, stat) => {
     console.log(`Document merger up and running\nLast modified ${stat.mtime.toDateString()}\nTemp folder: ${SAVE_FOLDER}`)
 })
 
-// OLD endpoint that returns a merged PDF.
+
+// endpoint that returns a merged PDF.
 app.use('/getpdf', (req, res) => {
     console.log("/getpdf endpoint called")
     try {
-        let d = (Object.keys(req.body).length > 0) ? req.body : req.query;
-        //When no data is sent, return error.
-        if (!Object.keys(d).length) { returnHTMLBlob(res, `Error: no POST data was sent`) } else {
-            // mergepdf.js
-            mergePDF(d.documents).then((buffer) => {
-                res.writeHead(200, {
-                    'Content-Type': 'application/pdf',
-                    // TODO: Dynamic filename?
-                    'Content-Disposition': 'filename=dokument.pdf',
-                    'Content-Length': buffer.length
-                });
-                res.end(buffer);
-                // The document(s) are corrupt, or otherwise
-            })
-        }
-    } catch (err) {
-        res.writeHead(500, { "Content-Type": "text/html" })
-        res.end(`Det oppstod en feil ved generering av pdf-dokumentet (/getpdf try/catch). stacktrace: ${err}`)
-    }
-});
-
-
-// endpoint for docxes using pandoc
-// main difference is the request contains arraybuffers of each document instead of just urls
-app.use('/getdoc', (req, res) => {
-    try {
-        console.log("got POST request to /getdoc")
-        let body = (Object.keys(req.body).length > 0) ? req.body : null;
+        let body = (Object.keys(req.body).length > 0) ? req.body : req.query;
         let documents = body.documents ? body.documents : null;
-        let docFormat = body.format || "docx"
+        //When no data is sent, return error.
         if (!Object.keys(body).length) {
             console.log(`Error: no POST data was sent`)
             returnHTMLBlob(res, `Error: no POST data was sent`)
             return res.end()
         }
-        // main part
+            
+            // Merge function that uses PDFtk
+            mergePDF(body.documents).then((buffer) => {
+                res.writeHead(200, {
+                    'Content-Type': 'application/pdf',
+                    'Content-Length': buffer.length
+                });
+                res.end(buffer);
+                // The document(s) are corrupt, or otherwise
+            })
+    } catch (err) {
+        console.error("ERROR IN PDFMERGER")
+        console.error(err)
+        res.writeHead(500, { "Content-Type": "text/html" })
+        res.end(`Det oppstod en feil ved generering av pdf-dokumentet (/getpdf try/catch).\nstacktrace:\n${err}`)
+    }
+});
+
+
+// endpoint that returns a merged DOCX.
+// main difference is the POST request contains arraybuffers of each document in addition to urls and titles
+app.use('/getdoc', (req, res) => {
+    try {
+        console.log("got POST request to /getdoc")
+        let body = (Object.keys(req.body).length > 0) ? req.body : null;
+        let documents = body.documents ? body.documents : null;
+        if (!Object.keys(body).length) {
+            console.log(`Error: no POST data was sent`)
+            returnHTMLBlob(res, `Error: no POST data was sent`)
+            return res.end()
+        }
+
+        // Logging the documents to be merged before running pandoc
         documents.forEach(doc => {
             console.log(`Title: ${doc.Title}`)
             console.log(`Url: ${doc.Url}`)
-            console.log(`Content: <Long-ass ArrayBuffer>`)
         });
 
+        // Calls the 
         mergeDOC(documents).then((buffer) => {
             res.writeHead(200, {
                 'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -97,19 +102,16 @@ app.use('/getdoc', (req, res) => {
 
 
     } catch (err) {
-        console.error("ERROR")
+        console.error("ERROR IN DOCMERGER")
         console.error(err)
-        returnHTMLBlob(res, `Error: ${err}`)
+        res.writeHead(500, { "Content-Type": "text/html" })
+        res.end(`Det oppstod en feil ved generering av docx-dokumentet (/getdoc try/catch).\nstacktrace:\n${err}`)
     }
 })
 
 // Returns an html blob to the client, used for error messages and such
 function returnHTMLBlob(res, htmlBlob) {
-    res.send(`<html>
-    <body style="font-family:Helvetica,Arial,Sans-Serif;max-width:80%;margin:20px 0 0 20px;">
-    ${htmlBlob}
-    </body></html>
-    `)
+    res.send(`<html><body style="font-family:Helvetica,Arial,Sans-Serif;max-width:80%;margin:20px 0 0 20px;">${htmlBlob}</body></html>`)
 }
 
 // Default root endpoint, display a message
