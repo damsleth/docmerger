@@ -1,5 +1,6 @@
 const PDFMerge = require('pdf-merge')
 const fs = require('fs')
+const fsasync = require("fs").promises
 const fetch = require('node-fetch')
 const Utils = require('./utils')
 const SAVE_FOLDER = process.env.TEMP ? process.env.TEMP : process.env.TMPDIR
@@ -25,13 +26,17 @@ module.exports = async function (documents) {
     let sortedPdfs = pdfs.map(p => p.path)
     console.log(`Merging documents...`)
 
+    let buffer;
     // Corner case where there's only one document to "merge".
-    // We have to add a blank entry to avoid pdftk bombing with "You need at least two pdfs to merge"-warning.
-    if (sortedPdfs.length === 1) { sortedPdfs.push(" ") }
-
-    const buffer = await PDFMerge(sortedPdfs);
-    if (buffer) { console.log("Documents successfully merged, removing temp files"); }
-    // Clean up
+    // just get the buffer from the file on disk
+    if (sortedPdfs.length === 1) {
+        const data = await fsasync.readFile(sortedPdfs[0])
+        buffer = Buffer.from(data)
+    } else {
+        buffer = await PDFMerge(sortedPdfs);
+        if (buffer) { console.log("Documents successfully merged, removing temp files"); }
+        // Clean up
+    }
     Utils.removeTempFiles(pdfs);
     console.log(`Temp files deleted, returning merged pdf to user`);
     return buffer;

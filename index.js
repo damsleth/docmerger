@@ -14,23 +14,24 @@ const mergePDF = require("./mergePDF")
 const mergeDOC = require("./mergeDOC")
 const Utils = require("./utils")
 const app = express()
+const cors = require('cors')
 app.listen(process.env.PORT || 7002)
 app.use(express.json({ limit: "50mb" }))       // to support JSON-encoded bodies
 app.use(express.urlencoded({ extended: true, limit: "50mb" })) // big limit so we can pass big bodies
+app.use(cors());
 
 // If We're debugging, enable CORS, so we accept calls from anywhere.
 // Debugging is auto enabled on MacOS, aka darwin
-if (process.platform === "darwin") {
-    const cors = require('cors');
-    console.log(`Debugging, CORS enabled`)
-    app.use(cors({
-        'allowedHeaders': ['sessionId', 'Content-Type'],
-        'exposedHeaders': ['sessionId'],
-        'origin': '*',
-        'methods': 'GET,HEAD,POST,',
-        'preflightContinue': false
-    }));
-}
+// if (process.platform === "darwin") {
+//     console.log(`Debugging, CORS enabled`)
+//     app.use(cors({
+//         'allowedHeaders': ['sessionId', 'Content-Type'],
+//         'exposedHeaders': ['sessionId'],
+//         'origin': '*',
+//         'methods': 'GET,HEAD,POST,',
+//         'preflightContinue': false
+//     }));
+// }
 
 // Temp dir environment variables differ across platforms.
 const SAVE_FOLDER = process.env.TEMP ? process.env.TEMP : process.env.TMPDIR
@@ -46,7 +47,6 @@ app.use('/getpdf', (req, res) => {
     console.log("/getpdf endpoint called")
     try {
         let body = (Object.keys(req.body).length > 0) ? req.body : req.query;
-        let documents = body.documents ? body.documents : null;
         //When no data is sent, return error.
         if (!Object.keys(body).length) {
             console.log(`Error: no POST data was sent`)
@@ -75,11 +75,9 @@ app.use('/getpdf', (req, res) => {
 // endpoint that returns a merged DOCX.
 // main difference is the POST request contains arraybuffers of each document in addition to urls and titles
 app.use('/getdoc', (req, res) => {
+    console.log("/getdoc endpoint called")
     try {
-        console.log("got POST request to /getdoc")
-        let body = (Object.keys(req.body).length > 0) ? req.body : null;
-        let documents = body.documents ? body.documents : null;
-        let trackChanges = body.trackchanges ? true : false;
+        let body = (Object.keys(req.body).length > 0) ? req.body : req.query;
         if (!Object.keys(body).length) {
             console.log(`Error: no POST data was sent`)
             returnHTMLBlob(res, `Error: no POST data was sent`)
@@ -87,13 +85,14 @@ app.use('/getdoc', (req, res) => {
         }
 
         // Logging the documents to be merged before running pandoc
-        documents.forEach(doc => {
+        body.documents.forEach(doc => {
             console.log(`Title: ${doc.Title}`)
             console.log(`Url: ${doc.Url}`)
         });
 
-        // Calls the 
-        mergeDOC(documents, trackChanges).then((cb) => {
+        let trackChanges = body.trackchanges ? true : false;
+        // Calls the mergeDOC aka pandoc feature
+        mergeDOC(body.documents, trackChanges).then((cb) => {
             let buffer = cb[0]
             let tempfiles = cb[1]
             res.writeHead(200, {
