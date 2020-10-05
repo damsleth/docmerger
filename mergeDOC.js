@@ -1,20 +1,20 @@
-const pandoc = require('./pandoc')
-const fs = require('fs')
 const fsasync = require("fs").promises
+const pandoc = require('./pandoc')
+const Utils = require('./utils')
 const SAVE_FOLDER = process.env.TEMP ? process.env.TEMP : process.env.TMPDIR // Temp dir environment variables differ across platforms.
 
-module.exports = async function (documents, trackchanges = true) {
+module.exports = async function (documents, trackchanges = false) {
 
     // Takes an object with an array of { documents:[{Title:<string>, Url:<string>, Content:<ArrayBuffer>}] } as input.
     console.log(`Saving ${documents.length} documents to disk`)
+    console.log(`Tracked changes are ${trackchanges ? `enabled` : `disabled`}`)
     let docsToMerge = [];
     for (let i in documents) {
         let nr = parseInt(i, 10) + 1
         let doc = documents[i]
         let data = doc.Content // arraybuffer
-        // Files are saved to disk as 6 character (sometimes 5) random ASCII strings with .docx extension, to avoid issues with special character filenames
-        let title = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 6);
-        await writeFile(`${SAVE_FOLDER}${title}.docx`, Buffer.from(data))
+        let title = Utils.getRandomFilename()
+        await Utils.writeFile(`${SAVE_FOLDER}${title}.docx`, Buffer.from(data))
         console.log(`${nr}/${documents.length}: ${title} saved to disk. (Original title: "${doc.Title}")`)
         docsToMerge.push({ path: `${SAVE_FOLDER}${title}.docx`, spmnr: doc.SpmNr })
     }
@@ -29,41 +29,16 @@ module.exports = async function (documents, trackchanges = true) {
     let params = `--track-changes=${trackChangesParam} --output ${mergedFilename}`
     console.log(`Merging documents...`)
     console.log(`MERGING ${sortedDocs.join("\n")}`)
-
+    // call pandoc, merge document
     await pandoc(`${src} ${params}`)
-    RemoveTempFiles(docsToMerge)
-    return getMergedDocument(mergedFilename).then(buffer => buffer)
+    // Add merged file to list of files, for deletion
+    docsToMerge.push({ path: mergedFilename })
+    let tempFiles = docsToMerge
+    // Pass buffer and documents to be deleted back to main function
+    return getMergedDocument(mergedFilename).then(buffer => [buffer, tempFiles])
 }
 
 async function getMergedDocument(filename) {
     const data = await fsasync.readFile(filename)
     return Buffer.from(data)
-}
-
-// ################ convenience methods #####################3
-
-
-async function writeFile(path, data, opts = 'utf8') {
-    new Promise((resolve, reject) => {
-        fs.writeFile(path, data, opts, (err) => {
-            if (err) reject(err)
-            else resolve()
-        })
-    })
-}
-
-function RemoveTempFiles(tempFiles) {
-    tempFiles.map(file => {
-        fs.unlink(file.path, function (err) {
-            if (err && err.code == 'ENOENT') {
-                // File doesn't exist.
-                console.info(`File ${file.path} doesn't exist, won't remove it.`);
-            } else if (err) {
-                // Other errors, e.g. maybe running user doesn't have permission to delete files on disk.
-                console.error(`Error occurred while trying to remove file ${file.path}`);
-            } else {
-                console.info(`Temp file ${file.path} deleted`);
-            }
-        });
-    })
 }

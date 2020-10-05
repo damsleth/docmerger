@@ -1,21 +1,20 @@
 const PDFMerge = require('pdf-merge')
 const fs = require('fs')
 const fetch = require('node-fetch')
+const Utils = require('./utils')
 const SAVE_FOLDER = process.env.TEMP ? process.env.TEMP : process.env.TMPDIR
 
 module.exports = async function (documents) {
-    
+
     console.log(`Saving ${documents.length} documents to disk`)
     let pdfs = []
     for (let i in documents) {
         let nr = parseInt(i, 10) + 1
         let doc = documents[i]
         let pdf = await fetch.default(doc.Url)
-        let data = await pdf.arrayBuffer()
-        // Files are saved to disk as 6 character (sometimes 5) random ASCII strings with .pdf extension
-        // This is to avoid issues with special character filenames
-        let title = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 6);
-        await writeFile(`${SAVE_FOLDER}/${title}.pdf`, Buffer.from(data))
+        let pdfBuffer = await pdf.arrayBuffer()
+        let title = Utils.getRandomFilename() // generate random filename to avoid collisions
+        await Utils.writeFile(`${SAVE_FOLDER}/${title}.pdf`, Buffer.from(pdfBuffer))
         console.log(`${nr}/${documents.length}: ${title} saved to disk. (Original title: "${doc.Title}")`)
         pdfs.push({ path: `${SAVE_FOLDER}/${title}.pdf`, spmnr: doc.SpmNr })
     }
@@ -32,7 +31,8 @@ module.exports = async function (documents) {
 
     const buffer = await PDFMerge(sortedPdfs);
     if (buffer) { console.log("Documents successfully merged, removing temp files"); }
-    RemoveTempFiles(pdfs);
+    // Clean up
+    Utils.removeTempFiles(pdfs);
     console.log(`Temp files deleted, returning merged pdf to user`);
     return buffer;
 

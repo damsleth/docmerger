@@ -12,6 +12,7 @@ const fs = require("fs")
 const express = require("express")
 const mergePDF = require("./mergePDF")
 const mergeDOC = require("./mergeDOC")
+const Utils = require("./utils")
 const app = express()
 app.listen(process.env.PORT || 7002)
 app.use(express.json({ limit: "50mb" }))       // to support JSON-encoded bodies
@@ -52,16 +53,16 @@ app.use('/getpdf', (req, res) => {
             returnHTMLBlob(res, `Error: no POST data was sent`)
             return res.end()
         }
-            
-            // Merge function that uses PDFtk
-            mergePDF(body.documents).then((buffer) => {
-                res.writeHead(200, {
-                    'Content-Type': 'application/pdf',
-                    'Content-Length': buffer.length
-                });
-                res.end(buffer);
-                // The document(s) are corrupt, or otherwise
-            })
+
+        // Merge function that uses PDFtk
+        mergePDF(body.documents).then((buffer) => {
+            res.writeHead(200, {
+                'Content-Type': 'application/pdf',
+                'Content-Length': buffer.length
+            });
+            res.end(buffer);
+            // The document(s) are corrupt, or otherwise
+        })
     } catch (err) {
         console.error("ERROR IN PDFMERGER")
         console.error(err)
@@ -78,6 +79,7 @@ app.use('/getdoc', (req, res) => {
         console.log("got POST request to /getdoc")
         let body = (Object.keys(req.body).length > 0) ? req.body : null;
         let documents = body.documents ? body.documents : null;
+        let trackChanges = body.trackchanges ? true : false;
         if (!Object.keys(body).length) {
             console.log(`Error: no POST data was sent`)
             returnHTMLBlob(res, `Error: no POST data was sent`)
@@ -91,13 +93,15 @@ app.use('/getdoc', (req, res) => {
         });
 
         // Calls the 
-        mergeDOC(documents).then((buffer) => {
+        mergeDOC(documents, trackChanges).then((cb) => {
+            let buffer = cb[0]
+            let tempfiles = cb[1]
             res.writeHead(200, {
                 'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                 'Content-Length': buffer.length
             });
             res.end(buffer);
-            // The document(s) are corrupt, or otherwise
+            Utils.removeTempFiles(tempfiles)
         })
 
 
