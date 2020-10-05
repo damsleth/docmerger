@@ -18,20 +18,19 @@ const cors = require('cors')
 app.listen(process.env.PORT || 7002)
 app.use(express.json({ limit: "50mb" }))       // to support JSON-encoded bodies
 app.use(express.urlencoded({ extended: true, limit: "50mb" })) // big limit so we can pass big bodies
-app.use(cors());
 
 // If We're debugging, enable CORS, so we accept calls from anywhere.
 // Debugging is auto enabled on MacOS, aka darwin
-// if (process.platform === "darwin") {
-//     console.log(`Debugging, CORS enabled`)
-//     app.use(cors({
-//         'allowedHeaders': ['sessionId', 'Content-Type'],
-//         'exposedHeaders': ['sessionId'],
-//         'origin': '*',
-//         'methods': 'GET,HEAD,POST,',
-//         'preflightContinue': false
-//     }));
-// }
+if (process.platform === "darwin") {
+    console.log(`Debugging, CORS enabled`)
+    app.use(cors({
+        'allowedHeaders': ['sessionId', 'Content-Type'],
+        'exposedHeaders': ['sessionId'],
+        'origin': '*',
+        'methods': 'GET,HEAD,POST,',
+        'preflightContinue': false
+    }));
+}
 
 // Temp dir environment variables differ across platforms.
 const SAVE_FOLDER = process.env.TEMP ? process.env.TEMP : process.env.TMPDIR
