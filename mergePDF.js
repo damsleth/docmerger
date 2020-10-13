@@ -28,13 +28,16 @@ module.exports = async function (documents) {
     let buffer;
     // Corner case where there's only one document to "merge".
     // just get the buffer from the file on disk
-    // fs.promises sometimes return a 502, so we're playing it safe using trad fs.readFile
+    // fs.promises is not entirely stable in node 10, so we're playing it safe using trad fs.readFile
     if (sortedPdfs.length === 1) {
         try {
             fs.readFile(sortedPdfs[0], function (err, data) {
                 if (err) throw err
                 buffer = data
+                console.log(`Single document "${sortedPdfs[0]}" loaded into buffer`)
+                // Clean up
                 Utils.removeTempFiles(pdfs);
+                return
             })
         }
         catch (err) { console.error(err) }
