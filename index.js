@@ -44,30 +44,23 @@ fs.stat(__filename.split(/[\\/]/).pop(), (err, stat) => {
 // endpoint that returns a merged PDF.
 app.use('/getpdf', (req, res) => {
     console.log("/getpdf endpoint called")
-    try {
-        let body = (Object.keys(req.body).length > 0) ? req.body : req.query;
-        //When no data is sent, return error.
-        if (!Object.keys(body).length) {
-            console.log(`Error: no POST data was sent`)
-            returnHTMLBlob(res, `Error: no POST data was sent`)
-            return res.end()
-        }
-
-        // Merge function that uses PDFtk
-        mergePDF(body.documents).then((buffer) => {
-            res.writeHead(200, {
-                'Content-Type': 'application/pdf',
-                'Content-Length': buffer.length
-            });
-            res.end(buffer);
-            // The document(s) are corrupt, or otherwise
-        })
-    } catch (err) {
-        console.error("ERROR IN PDFMERGER")
-        console.error(err)
-        res.writeHead(500, { "Content-Type": "text/html" })
-        res.end(`Det oppstod en feil ved generering av pdf-dokumentet (/getpdf try/catch).\nstacktrace:\n${err}`)
+    let body = (Object.keys(req.body).length > 0) ? req.body : req.query;
+    //When no data is sent, return error.
+    if (!Object.keys(body).length) {
+        console.log(`Error: no POST data was sent`)
+        returnHTMLBlob(res, `Error: no POST data was sent`)
+        return res.end()
     }
+
+    // Merge function that uses PDFtk
+    mergePDF(body.documents).then((buffer) => {
+        res.writeHead(200, {
+            'Content-Type': 'application/pdf',
+            'Content-Length': buffer.length
+        });
+        res.end(buffer);
+        // The document(s) are corrupt, or otherwise
+    }).catch((err) => { returnError(err, res) })
 });
 
 
@@ -75,41 +68,39 @@ app.use('/getpdf', (req, res) => {
 // main difference is the POST request contains arraybuffers of each document in addition to urls and titles
 app.use('/getdoc', (req, res) => {
     console.log("/getdoc endpoint called")
-    try {
-        let body = (Object.keys(req.body).length > 0) ? req.body : req.query;
-        if (!Object.keys(body).length) {
-            console.log(`Error: no POST data was sent`)
-            returnHTMLBlob(res, `Error: no POST data was sent`)
-            return res.end()
-        }
-
-        // Logging the documents to be merged before running pandoc
-        body.documents.forEach(doc => {
-            console.log(`Title: ${doc.Title}`)
-            console.log(`Url: ${doc.Url}`)
-        });
-
-        let trackChanges = body.trackchanges ? true : false;
-        // Calls the mergeDOC aka pandoc feature
-        mergeDOC(body.documents, trackChanges).then((cb) => {
-            let buffer = cb[0]
-            let tempfiles = cb[1]
-            res.writeHead(200, {
-                'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                'Content-Length': buffer.length
-            });
-            res.end(buffer);
-            Utils.removeTempFiles(tempfiles)
-        })
-
-
-    } catch (err) {
-        console.error("ERROR IN DOCMERGER")
-        console.error(err)
-        res.writeHead(500, { "Content-Type": "text/html" })
-        res.end(`Det oppstod en feil ved generering av docx-dokumentet (/getdoc try/catch).\nstacktrace:\n${err}`)
+    let body = (Object.keys(req.body).length > 0) ? req.body : req.query;
+    if (!Object.keys(body).length) {
+        console.log(`Error: no POST data was sent`)
+        returnHTMLBlob(res, `Error: no POST data was sent`)
+        return res.end()
     }
+
+    // Logging the documents to be merged before running pandoc
+    body.documents.forEach(doc => {
+        console.log(`Title: ${doc.Title}`)
+        console.log(`Url: ${doc.Url}`)
+    });
+
+    let trackChanges = body.trackchanges ? true : false;
+    // Calls the mergeDOC aka pandoc feature
+    mergeDOC(body.documents, trackChanges).then((cb) => {
+        let buffer = cb[0]
+        let tempfiles = cb[1]
+        res.writeHead(200, {
+            'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'Content-Length': buffer.length
+        });
+        res.end(buffer);
+        Utils.removeTempFiles(tempfiles)
+    }).catch((err) => { returnError(err, res) })
 })
+
+function returnError(err, res) {
+    console.error("ERROR")
+    console.error(err)
+    res.writeHead(500, { "Content-Type": "text/html" })
+    res.end(`##### Det oppstod en feil ved generering av dokumentet#####\nstacktrace:\n${err}`)
+}
 
 // Returns an html blob to the client, used for error messages and such
 function returnHTMLBlob(res, htmlBlob) {
