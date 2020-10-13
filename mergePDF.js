@@ -1,6 +1,5 @@
 const PDFMerge = require('pdf-merge')
 const fs = require('fs')
-const fsasync = require("fs").promises
 const fetch = require('node-fetch')
 const Utils = require('./utils')
 const SAVE_FOLDER = process.env.TEMP ? process.env.TEMP : process.env.TMPDIR
@@ -29,9 +28,15 @@ module.exports = async function (documents) {
     let buffer;
     // Corner case where there's only one document to "merge".
     // just get the buffer from the file on disk
+    // fs.promises sometimes return a 502, so we're playing it safe using trad fs.readFile
     if (sortedPdfs.length === 1) {
-        const data = await fsasync.readFile(sortedPdfs[0])
-        buffer = Buffer.from(data)
+        try {
+            fs.readFile(sortedPdfs[0], function (err, data) {
+                if (err) throw err
+                buffer = data
+            })
+        }
+        catch (err) { console.error(err) }
     } else {
         buffer = await PDFMerge(sortedPdfs);
         if (buffer) { console.log("Documents successfully merged, removing temp files"); }
@@ -41,29 +46,4 @@ module.exports = async function (documents) {
     console.log(`Temp files deleted, returning merged pdf to user`);
     return buffer;
 
-}
-
-async function writeFile(path, data, opts = 'utf8') {
-    new Promise((resolve, reject) => {
-        fs.writeFile(path, data, opts, (err) => {
-            if (err) reject(err)
-            else resolve()
-        })
-    })
-}
-
-function RemoveTempFiles(tempFiles) {
-    tempFiles.map(file => {
-        fs.unlink(file.path, function (err) {
-            if (err && err.code == 'ENOENT') {
-                // File doesn't exist.
-                console.info(`File ${file.path} doesn't exist, won't remove it.`);
-            } else if (err) {
-                // Other errors, e.g. maybe running user doesn't have permission to delete files on disk.
-                console.error(`Error occurred while trying to remove file ${file.path}`);
-            } else {
-                console.info(`Temp file ${file.path} deleted`);
-            }
-        });
-    })
 }
