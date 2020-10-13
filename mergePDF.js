@@ -34,6 +34,7 @@ module.exports = async function (documents) {
             fs.readFile(sortedPdfs[0], function (err, data) {
                 if (err) throw err
                 buffer = data
+                Utils.removeTempFiles(pdfs);
             })
         }
         catch (err) { console.error(err) }
@@ -41,8 +42,8 @@ module.exports = async function (documents) {
         buffer = await PDFMerge(sortedPdfs);
         if (buffer) { console.log("Documents successfully merged, removing temp files"); }
         // Clean up
+        Utils.removeTempFiles(pdfs);
     }
-    Utils.removeTempFiles(pdfs);
     console.log(`Temp files deleted, returning merged pdf to user`);
     return buffer;
 
