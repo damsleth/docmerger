@@ -1,23 +1,25 @@
 # DSS-OWAPROXY
 
-node.js (express) server acting as middleware between the client and OWA/WOPI/Word Automation Services, providing pdf and docx merge functionality using [pandoc](https://pandoc.org/) and [PDFtk](https://www.pdflabs.com/tools/pdftk-server/).
+node.js express server acting as middleware between the client and Office Online Server / WOPI / Word Automation Services, providing pdf and docx merge functionality using [pandoc](https://pandoc.org/) for docx and [PDFtk](https://www.pdflabs.com/tools/pdftk-server/) for PDFs.
 
 Supports merging Docx and PDF documents, though not both simultaneously.
 
 ## Usage
 
-Pass an object, either 
-* `{documents:[{Title:<string>,Url:<string-to-pdf>}]}` to the `/getpdf`-endpoint to return a PDF or 
-* `{documents:[{Title:<string>,Url:<string>,Content:<ArrayBuffer>}]}` to the `/getdoc`-endpoint to return a docx
+Pass an object, either
+* `/getpdf` - `{documents:[{Title:<string>,Url:<string-to-pdf>}]}` returns a PDF 
+* `/getdoc` - `{documents:[{Title:<string>,Url:<string>,Content:<ArrayBuffer>}]}` returns a docx
 
-These are used by the `Last ned samlet PDF` and `Last ned samlet Docx` User Custom Actions
+These are used by the **Last ned samlet PDF** and **Last ned samlet Docx** User Custom Actions
 
 ## Prerequisites / Dependencies
 
-* nodejs LTS >=8 installed on machine running the server
+* nodejs LTS >=10 installed on machine running the server
     * express
     * node-fetch
-    * nodemon (for dev-purposes)
+    * pdf-merge
+    * nodemon (dev)
+    * cors (dev)
 * [pandoc](https://pandoc.org/) - for docx merging
 * [PDFtk](https://www.pdflabs.com/tools/pdftk-server/) - for pdf merging
 
@@ -75,4 +77,4 @@ svc.uninstall();
 
 ## maintainers
 
-DSS-Team, mainly @damsleth
+DSS-Team, mainly [@damsleth](https://github.com/damsleth)

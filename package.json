@@ -1,6 +1,6 @@
 {
   "name": "dss-owaproxy",
-  "version": "2.20.09",
+  "version": "2.20.10",
   "description": "Office Web Apps proxy for fetching and merging PDFs and DOCXes from Word Automation Services and Office Online Server",
   "main": "index.js",
   "module": "esnext",
