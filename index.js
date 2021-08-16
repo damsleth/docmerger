@@ -1,10 +1,4 @@
 /**
- * SFS OWA Proxy and PDF merger v1.5.
- * This app takes a list of pdfs or docxes, merges them and returns them as a single pdf or docx to the client
- * This proxy is running on port 7001, and accepts POSTS to /getpdf and /getdoc with an object like this 
- * /getpdf: { documents:[{Title:string, Url:string, SpmNr:string}]} - same structure as previous version to ensure backwards compatibility
- * /getdoc: {format: docx||pdf||markdown||whatever, documents:[{Title:string, Url:string, Body:ArrayBuffer}]} - sharepoint docxes don't have a public url like pdfs, so we have to pass the doc data
- * 
  * Last updated 4.10.2020 by @damsleth
  */
 
@@ -44,6 +38,8 @@ fs.stat(__filename.split(/[\\/]/).pop(), (err, stat) => {
 // endpoint that returns a merged PDF.
 app.use('/getpdf', (req, res) => {
     console.log("/getpdf endpoint called")
+    console.log("body:")
+    console.log(req.body || "NONE")
     let body = (Object.keys(req.body).length > 0) ? req.body : req.query;
     //When no data is sent, return error.
     if (!Object.keys(body).length) {
@@ -112,7 +108,7 @@ app.use('/', (_req, res) => {
     returnHTMLBlob(res, `
 <h2>This is a pdf proxy API</h2>
 <ul><b>usage:</b><br/><br/>
-<li><b>/getpdf</b>:   { documents: [ {Title:string, Url:string, SpmNr:string} ] } - same structure as previous version to ensure backwards compatibility</li><br/>
+<li><b>/getpdf</b>:   { documents: [ {Title:string, Url:string} ] } - pass an array of pdf urls in, get a single pdf out
 <li><b>/getdoc</b>: { documents: [ {Title:string, Url:string, Body:ArrayBuffer} ] } - sharepoint docxes don't have a public url like pdfs, so you need to pass the document as an arraybuffer</li> 
 </ul>`)
 });

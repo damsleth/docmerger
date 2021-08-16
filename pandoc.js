@@ -5,6 +5,8 @@
  * So I wrote this instead, which pretty naively just eats the arguments you pass it.
  * You have to keep track of things like filename and error handling yourself
  * as the function itself only returns true or false, and logs to the console
+ * 
+ * Last updated 04.10.2020 by @damsleth
  */
 
 

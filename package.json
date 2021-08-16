@@ -1,17 +1,17 @@
 {
-  "name": "dss-owaproxy",
-  "version": "2.20.10",
+  "name": "docmerger",
+  "version": "2.21.08",
   "description": "Office Web Apps proxy for fetching and merging PDFs and DOCXes from Word Automation Services and Office Online Server",
   "main": "index.js",
   "module": "esnext",
   "scripts": {},
   "repository": {
     "type": "git",
-    "url": "git+https://bitbucket.org/puzzlepart/dss-owaproxy.git"
+    "url": "git+https://github.com/damsleth/docmerger.git"
   },
   "author": "https://github.com/damsleth",
   "license": "WTFPL",
-  "homepage": "https://bitbucket.org/puzzlepart/dss-owaproxy#readme",
+  "homepage": "https://github.com/damsleth/docmerger#readme",
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.17.1",

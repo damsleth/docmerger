@@ -6,7 +6,7 @@ const SAVE_FOLDER = process.env.TEMP ? process.env.TEMP : process.env.TMPDIR
 module.exports = async function (documents) {
     try {
         documents.length === 1
-            ? console.log(`Single pdf requested (ekspedering?)\nReturning the buffer without saving to disk`)
+            ? console.log(`Single pdf requested\nReturning the buffer without saving to disk`)
             : console.log(`Saving ${documents.length} documents to disk`)
         let pdfs = []
         for (let i in documents) {
